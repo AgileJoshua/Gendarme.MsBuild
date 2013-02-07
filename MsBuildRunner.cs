@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Gendarme.Framework;
@@ -114,7 +115,11 @@ namespace Gendarme.MsBuild
 		public void WriteReport()
 		{
 			if (Defects.Count == 0)
+			{
 				Log.LogMessage(MessageImportance.Normal, "No errors detected");
+				if (!string.IsNullOrEmpty(LogFile) && File.Exists(LogFile))
+					File.Delete(LogFile);
+			}
 			else
 			{
 				ResultWriter resultWriter = null;
