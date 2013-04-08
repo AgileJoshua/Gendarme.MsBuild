@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 using Gendarme.Framework;
@@ -59,6 +60,7 @@ namespace Gendarme.MsBuild
 		private Dictionary<string, HashSet<string>> m_Assemblies = new Dictionary<string, HashSet<string>>();
 		private Dictionary<string, HashSet<string>> m_Types = new Dictionary<string, HashSet<string>>();
 		private Dictionary<string, HashSet<string>> m_Methods = new Dictionary<string, HashSet<string>>();
+		private Dictionary<string, HashSet<string>> m_MethodsRegex = new Dictionary<string, HashSet<string>>();
 		private Dictionary<string, Dictionary<string, IgnoreFileInfo>> m_IgnoredRules = new Dictionary<string, Dictionary<string, IgnoreFileInfo>>();
 		private Stack<string> m_Files = new Stack<string>();
 		private Dictionary<string, List<int>> m_FileLineNumbers = new Dictionary<string, List<int>>();
@@ -166,8 +168,14 @@ namespace Gendarme.MsBuild
 				case 'T': // type (no space allowed)
 					Add(m_Types, m_CurrentRule, line.Substring(line.LastIndexOf(' ') + 1));
 					break;
-				case 'M': // method
-					Add(m_Methods, m_CurrentRule, line.Substring(2).Trim());
+				case 'M': // method - we support full name and wildcard as part of method name.
+					// This makes it easier to deal with anonymous methods which change part
+					// of their name if the compiler changes the order of anonymous methods.
+					var method = line.Substring(2).Trim();
+					if (method.Contains("*"))
+						Add(m_MethodsRegex, m_CurrentRule, method.Replace("*", "[A-Za-z0-9_]+"));
+					else
+						Add(m_Methods, m_CurrentRule, method);
 					break;
 				case 'N': // namespace - special case (no need to resolve)
 					base.Add(m_CurrentRule, NamespaceDefinition.GetDefinition(line.Substring(2).Trim()));
@@ -192,26 +200,32 @@ namespace Gendarme.MsBuild
 		// scan the analyzed code a single time looking for targets
 		private void Resolve()
 		{
-			HashSet<string> rules;
+			HashSet<string> rule;
+			var methodsRegex = new Dictionary<Regex, HashSet<string>>();
+
+			foreach (var pattern in m_MethodsRegex.Keys)
+			{
+				methodsRegex.Add(new Regex(pattern), m_MethodsRegex[pattern]);
+			}
 
 			foreach (AssemblyDefinition assembly in Runner.Assemblies)
 			{
-				if (m_Assemblies.TryGetValue(assembly.Name.FullName, out rules))
+				if (m_Assemblies.TryGetValue(assembly.Name.FullName, out rule))
 				{
-					AddList(assembly, rules);
+					AddList(assembly, rule);
 				}
-				if (m_Assemblies.TryGetValue(assembly.Name.Name, out rules))
+				if (m_Assemblies.TryGetValue(assembly.Name.Name, out rule))
 				{
-					AddList(assembly, rules);
+					AddList(assembly, rule);
 				}
 
 				foreach (ModuleDefinition module in assembly.Modules)
 				{
 					foreach (TypeDefinition type in module.GetAllTypes ())
 					{
-						if (m_Types.TryGetValue(type.FullName, out rules))
+						if (m_Types.TryGetValue(type.FullName, out rule))
 						{
-							AddList(type, rules);
+							AddList(type, rule);
 						}
 
 						if (type.HasMethods)
@@ -219,9 +233,18 @@ namespace Gendarme.MsBuild
 							foreach (MethodDefinition method in type.Methods)
 							{
 								// FIXME avoid (allocations in) ToString call
-								if (m_Methods.TryGetValue(method.ToString(), out rules))
+								var methodName = method.ToString();
+								if (m_Methods.TryGetValue(methodName, out rule))
 								{
-									AddList(method, rules);
+									AddList(method, rule);
+								}
+								else
+								{ // deal with wildcard method names
+									foreach (Regex regex in methodsRegex.Keys)
+									{
+										if (regex.IsMatch(methodName))
+											AddList(method, methodsRegex[regex]);
+									}
 								}
 							}
 						}
