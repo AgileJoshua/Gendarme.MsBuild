@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EC6F1A63-7D24-421E-80B9-9D9700B677CE}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -38,7 +38,7 @@
     <Reference Include="Gendarme.Framework">
       <HintPath>Externals\Gendarme.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil, Version=0.9.4.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+    <Reference Include="Mono.Cecil">
       <HintPath>Externals\Mono.Cecil.dll</HintPath>
     </Reference>
   </ItemGroup>
