@@ -32,14 +32,14 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
-    <Reference Include="gendarme">
-      <HintPath>Externals\gendarme.exe</HintPath>
-    </Reference>
     <Reference Include="Gendarme.Framework">
       <HintPath>Externals\Gendarme.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil">
-      <HintPath>Externals\Mono.Cecil.dll</HintPath>
+    <Reference Include="Mono.Cecil, Version=0.9.5.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="gendarme">
+      <HintPath>Externals\gendarme.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
